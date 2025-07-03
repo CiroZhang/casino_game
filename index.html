@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Slot Machine</title>
+  <style>
+    body {
+      background: linear-gradient(to bottom, #111, #222);
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 30px;
+    }
+
+    .machine {
+      position: relative;
+      width: 400px;
+      height: 600px;
+      margin: 0 auto;
+      background: url('slot.png') no-repeat center;
+      background-size: contain;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .reels {
+      position: absolute;
+      top: 200px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .reel {
+      width: 60px;
+      height: 60px;
+      font-size: 2rem;
+      background: white;
+      border: 2px solid black;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 8px #fff;
+      transition: transform 0.2s;
+    }
+
+    button {
+      position: absolute;
+      bottom: 60px;
+      background: gold;
+      color: black;
+      padding: 12px 24px;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: orange;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎰 CSV Slot Machine</h1>
+
+  <div class="machine">
+    <div class="reels">
+      <div class="reel" id="reel1">❓</div>
+      <div class="reel" id="reel2">❓</div>
+      <div class="reel" id="reel3">❓</div>
+    </div>
+    <button onclick="spin()">Spin 🎯</button>
+  </div>
+
+  <div class="message" id="message"></div>
+
+  <script>
+    const symbols = ["🍒", "🍋", "🍇", "🔔", "💎", "7️⃣", "⭐", "🪙"];
+    const reels = [document.getElementById("reel1"), document.getElementById("reel2"), document.getElementById("reel3")];
+    const message = document.getElementById("message");
+    let data = [];
+    let index = 0;
+
+    fetch('random_number_generator/lfsr_output.csv')
+      .then(response => response.text())
+      .then(text => {
+        const lines = text.trim().split('\n').slice(1); // skip header
+        data = lines.map(line => line.split(',')[1]); // grab Value column
+      });
+
+    function bitsToSymbol(bits) {
+      const decimal = parseInt(bits, 2);
+      return symbols[decimal % symbols.length];
+    }
+
+    function spin() {
+      if (index >= data.length) {
+        message.textContent = "🔁 No more spins in CSV!";
+        return;
+      }
+
+      const bits = data[index];
+      index++;
+
+      const symbolsShown = [
+        bitsToSymbol(bits.slice(0, 3)),
+        bitsToSymbol(bits.slice(3, 6)),
+        bitsToSymbol(bits.slice(6, 9))
+      ];
+
+      reels.forEach((reel, i) => {
+        reel.textContent = symbolsShown[i];
+        reel.style.transform = "scale(1.2)";
+        setTimeout(() => reel.style.transform = "scale(1)", 100);
+      });
+
+      if (symbolsShown.every(s => s === symbolsShown[0])) {
+        message.textContent = "🎉 You Win!";
+      } else {
+        message.textContent = "Try Again!";
+      }
+    }
+  </script>
+</body>
+</html>
